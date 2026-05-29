@@ -1,1 +1,1 @@
-const _hello = "baz";
+const _hello = "foo";
