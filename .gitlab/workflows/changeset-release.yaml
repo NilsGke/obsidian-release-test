@@ -1,0 +1,61 @@
+name: Changeset Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-and-release:
+    if: github.repository == 'NilsGke/obsidian-better-vim' && github.event.repository.fork == false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@11.1.3 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Release Pull Request or Publish
+        uses: changesets/action@v1
+        with:
+          version: |
+            pnpm changeset version
+            pnpm run version
+
+          publish: |
+            pnpm install --frozen-lockfile
+            pnpm run build
+
+            VERSION=$(node -p "require('./package.json').version")
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git tag "$VERSION"
+            git push origin "$VERSION"
+
+            gh release create "$VERSION" \
+              --title "$VERSION" \
+              --generate-notes \
+              main.js manifest.json styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
