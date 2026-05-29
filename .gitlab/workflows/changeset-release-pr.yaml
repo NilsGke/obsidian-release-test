@@ -1,4 +1,4 @@
-name: Changeset Release
+name: Changeset Release PR
 
 on:
   push:
@@ -34,28 +34,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release PR / Publish
         uses: changesets/action@v1
         with:
-          version: |
-            pnpm changeset version
-            pnpm run version
-
-          publish: |
-            pnpm install --frozen-lockfile
-            pnpm run build
-
-            VERSION=$(node -p "require('./package.json').version")
-
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-
-            git tag "$VERSION"
-            git push origin "$VERSION"
-
-            gh release create "$VERSION" \
-              --title "$VERSION" \
-              --generate-notes \
-              main.js manifest.json styles.css
+          version: pnpm run version
+          publish: pnpm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
